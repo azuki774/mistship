@@ -174,6 +174,8 @@ kubectl --kubeconfig "$KUBECONFIG" get nodes
 - トークンやパスワード文字列を貼っていない
 - サンプル値がダミー値に置き換わっている
 
+判定基準を固定したい場合は [`docs/commit-secret-reviewer.md`](/home/azuki/work/mistship/docs/commit-secret-reviewer.md) を参照します。
+
 ## 今後の整備候補
 
 - `.gitignore` の整備
