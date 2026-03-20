@@ -20,6 +20,48 @@ TalOS ベースのインフラを管理するためのリポジトリです。
 
 現時点では [`image.yml`](/home/azuki/work/mistship/image.yml) に TalOS イメージ拡張の定義を置いています。これは公開可能な情報のみで構成します。
 
+## Nix 開発環境
+
+TalOS を操作する CLI は [`flake.nix`](/home/azuki/work/mistship/flake.nix) の `devShell` でまとめて提供します。
+
+```bash
+nix develop
+```
+
+このシェルには次のコマンドを入れます。
+
+- `talosctl`
+- `talhelper`
+- `kubectl`
+- `jq`
+- `yq`
+- `sops`
+- `age`
+
+シェル起動時に次の環境変数を既定で設定します。
+
+- `MISTSHIP_SECRETS_DIR=${MISTSHIP_SECRETS_DIR:-$HOME/secure/mistship}`
+- `TALOSCONFIG=${TALOSCONFIG:-$MISTSHIP_SECRETS_DIR/talosconfig}`
+- `KUBECONFIG=${KUBECONFIG:-$MISTSHIP_SECRETS_DIR/kubeconfig}`
+
+想定しているローカル配置例:
+
+```text
+~/secure/mistship/
+├── talosconfig
+├── kubeconfig
+└── nodes.yaml
+```
+
+動作確認例:
+
+```bash
+nix develop --command talosctl version --client
+nix develop --command talhelper --help
+```
+
+`flake.lock` はコミットして、チーム内で同じ `nixpkgs` リビジョンを使う前提にします。更新したい時だけ `nix flake update` を実行します。
+
 ## Git に含めないもの
 
 以下は公開リポジトリに含めません。

@@ -1,0 +1,42 @@
+name: Nix CI
+
+on:
+  pull_request:
+    paths:
+      - "flake.nix"
+      - "**/*.nix"
+      - "flake.lock"
+      - ".github/workflows/nix-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "flake.nix"
+      - "**/*.nix"
+      - "flake.lock"
+      - ".github/workflows/nix-ci.yml"
+
+jobs:
+  devshell:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v15
+
+      - name: Configure Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Evaluate flake
+        run: nix flake show
+
+      - name: Build dev shell
+        run: nix develop .#default --command bash -lc 'command -v talosctl talhelper kubectl jq yq sops age'
+
+      - name: Smoke test Talos tooling
+        run: |
+          nix develop .#default --command talosctl version --client
+          nix develop .#default --command talhelper --help >/dev/null
