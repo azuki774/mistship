@@ -12,6 +12,7 @@ on:
       - "manifests/infra/**"
       - "flake.nix"
       - "flake.lock"
+      - "scripts/**"
       - ".github/actions/cluster-access/**"
       - ".github/workflows/talos-update.yml"
 
@@ -118,6 +119,7 @@ jobs:
             exit 0
           fi
 
+          nix develop .#default --command ./scripts/apply-calico.sh
           nix develop .#default --command kubectl apply --recursive -f manifests/infra
 
       - name: Clean up secrets
