@@ -108,13 +108,19 @@ runs:
         set -euo pipefail
         nix develop .#default --command bash -lc '
           set -euo pipefail
+          worker_patch_args=()
+          worker_patch_contents="$(grep -vE "^[[:space:]]*(#|$)" patches/worker.yaml | tr -d "[:space:]" || true)"
+          if [[ -n "$worker_patch_contents" && "$worker_patch_contents" != "{}" ]]; then
+            worker_patch_args+=(--config-patch-worker "@patches/worker.yaml")
+          fi
+
           talosctl gen config "$CLUSTER_NAME" "https://$CONTROL_PLANE_IP:6443" \
             --with-secrets "$CLUSTER_SECRETS" \
             --install-disk "$INSTALL_DISK" \
             --install-image "$INSTALL_IMAGE" \
             --config-patch "@patches/common.yaml" \
             --config-patch-control-plane "@patches/controlplane.yaml" \
-            --config-patch-worker "@patches/worker.yaml" \
+            "${worker_patch_args[@]}" \
             --output "$GENERATED_CONFIG_DIR"
 
           cp "$GENERATED_CONFIG_DIR/controlplane.yaml" "$CONTROL_PLANE_CONFIG"
