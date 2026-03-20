@@ -24,6 +24,8 @@ jobs:
   update-control-plane:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    environment:
+      name: Development
     defaults:
       run:
         shell: bash

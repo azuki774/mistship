@@ -86,6 +86,8 @@ nix develop --command talhelper --help
 
 CI では取得した secret から `talosconfig` と machine config を再生成し、`talosctl apply-config` で既存クラスタへ反映します。更新対象は現時点では control plane のみです。
 
+この workflow は GitHub Actions の `Development` environment を使う前提です。environment secrets や protection rules を使いたい場合は、この名前で GitHub 側に設定してください。
+
 workflow では secret の内容をログへ出さず、`.secret` を artifact 化せず、job 終了時に `.secret` を削除します。
 
 ## Git に含めないもの
