@@ -2,4 +2,3 @@
 /result
 .env
 .secret/*
-!.secret/.gitkeep
