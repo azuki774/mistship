@@ -37,8 +37,5 @@ jobs:
       - name: Configure Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@v8
 
-      - name: Evaluate flake
-        run: nix flake show
-
       - name: Run CI checks in dev shell
         run: nix develop .#default --command bash ./scripts/ci-nix-checks.sh
