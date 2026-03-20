@@ -114,6 +114,7 @@ runs:
             --install-image "$INSTALL_IMAGE" \
             --config-patch "@patches/common.yaml" \
             --config-patch-control-plane "@patches/controlplane.yaml" \
+            --config-patch-worker "@patches/worker.yaml" \
             --output "$GENERATED_CONFIG_DIR"
 
           cp "$GENERATED_CONFIG_DIR/controlplane.yaml" "$CONTROL_PLANE_CONFIG"

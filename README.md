@@ -23,11 +23,14 @@ TalOS ベースのインフラを管理するためのリポジトリです。
 
 control plane の初期起動手順は [`docs/bootstrap.md`](/home/azuki/work/mistship/docs/bootstrap.md) にまとめます。
 
+既存 single-node クラスタを `Flannel + kube-proxy` から再構築で移行する手順は [`docs/networking-migration.md`](/home/azuki/work/mistship/docs/networking-migration.md) にまとめます。
 クラスタのネットワーク構成方針は [`docs/networking-stack.md`](/home/azuki/work/mistship/docs/networking-stack.md) にまとめます。
 
 machine config のうち公開可能な設定は [`patches/common.yaml`](/home/azuki/work/mistship/patches/common.yaml)、[`patches/controlplane.yaml`](/home/azuki/work/mistship/patches/controlplane.yaml)、[`patches/worker.yaml`](/home/azuki/work/mistship/patches/worker.yaml) で管理します。
 
 Kubernetes の基盤 manifest は [`manifests/infra/`](/home/azuki/work/mistship/manifests/infra/README.md) で管理します。
+
+Calico の staged apply は [`scripts/apply-calico.sh`](/home/azuki/work/mistship/scripts/apply-calico.sh) で共通化します。
 
 ## Nix 開発環境
 
@@ -88,7 +91,7 @@ nix develop --command talhelper --help
 - `SECRET_BUCKET_ACEESS_KEY`
 - `SECRET_BUCKET_NAME`
 
-CI では取得した secret から `talosconfig` と machine config を再生成し、`talosctl apply-config` で既存クラスタへ反映します。TalOS API の復帰確認後に `kubeconfig` を再生成し、[`manifests/infra/`](/home/azuki/work/mistship/manifests/infra/README.md) 配下の manifest を `kubectl apply` します。更新対象は現時点では control plane と基盤 manifest です。
+CI では取得した secret から `talosconfig` と machine config を再生成し、`talosctl apply-config` で既存クラスタへ反映します。TalOS API の復帰確認後に `kubeconfig` を再生成し、Calico を ordered apply してから [`manifests/infra/`](/home/azuki/work/mistship/manifests/infra/README.md) 配下の manifest を `kubectl apply` します。更新対象は現時点では control plane と基盤 manifest です。
 
 cluster 接続準備のうち、`.secret` の作成、S3 からの `.env` と `cluster-secrets.yaml` の取得、`.env` の読み込み、`talosconfig` の生成は [`cluster-access`](/home/azuki/work/mistship/.github/actions/cluster-access/action.yml) Composite Action に切り出して共通化しています。
 

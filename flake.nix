@@ -55,6 +55,7 @@
               age
               jq
               kubectl
+              kubeconform
               sops
               talhelper
               talosctlPinned

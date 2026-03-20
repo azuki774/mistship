@@ -14,3 +14,5 @@
 - 実 IP、実 FQDN、認証情報を含むファイル
 
 このディレクトリに `*.yaml`、`*.yml`、`*.json` がまだ無い場合、CI の apply step は自動的にスキップされます。
+
+Calico を置く場合は、`manifests/infra/calico/` 配下を先に ordered apply し、その後で残りの `manifests/infra/` を適用します。
