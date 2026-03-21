@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ebpf-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: ebpf-demo
+  labels:
+    app.kubernetes.io/name: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nginx
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nginx
+    spec:
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: nginx
+          image: nginx:stable-alpine
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  namespace: ebpf-demo
+  labels:
+    app.kubernetes.io/name: nginx
+spec:
+  selector:
+    app.kubernetes.io/name: nginx
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client
+  namespace: ebpf-demo
+  labels:
+    app.kubernetes.io/name: client
+spec:
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+  containers:
+    - name: busybox
+      image: busybox:1.36.1
+      command:
+        - /bin/sh
+        - -c
+        - sleep 365d
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 50m
+          memory: 32Mi
