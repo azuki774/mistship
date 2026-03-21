@@ -51,10 +51,10 @@ jobs:
           mask-aws-account-id: true
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v15
+        uses: DeterminateSystems/nix-installer-action@v21
 
       - name: Configure Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@v8
+        uses: DeterminateSystems/magic-nix-cache-action@v13
 
       - name: Prepare cluster access
         uses: ./.github/actions/cluster-access
@@ -62,65 +62,8 @@ jobs:
           secret-bucket-name: ${{ secrets.SECRET_BUCKET_NAME }}
           aws-region: ap-northeast-1
 
-      - name: Apply control plane config
-        run: |
-          set -euo pipefail
-          nix develop .#default --command bash -lc '
-            set -euo pipefail
-            talosctl apply-config \
-              --talosconfig "$TALOSCONFIG" \
-              --endpoints "$CONTROL_PLANE_IP" \
-              --nodes "$CONTROL_PLANE_IP" \
-              --file "$CONTROL_PLANE_CONFIG"
-          '
-
-      - name: Verify Talos API recovery
-        run: |
-          set -euo pipefail
-          nix develop .#default --command bash -lc '
-            set -euo pipefail
-
-            for attempt in $(seq 1 20); do
-              if talosctl version \
-                --talosconfig "$TALOSCONFIG" \
-                --endpoints "$CONTROL_PLANE_IP" \
-                --nodes "$CONTROL_PLANE_IP"
-              then
-                exit 0
-              fi
-
-              sleep 15
-            done
-
-            echo "Talos API did not recover after apply-config" >&2
-            exit 1
-          '
-
-      - name: Generate kubeconfig
-        run: |
-          set -euo pipefail
-          nix develop .#default --command bash -lc '
-            set -euo pipefail
-            talosctl kubeconfig "$KUBECONFIG" \
-              --merge=false \
-              --force \
-              --talosconfig "$TALOSCONFIG" \
-              --endpoints "$CONTROL_PLANE_IP" \
-              --nodes "$CONTROL_PLANE_IP"
-            chmod 600 "$KUBECONFIG"
-          '
-
-      - name: Apply infrastructure manifests
-        run: |
-          set -euo pipefail
-
-          if ! find manifests/infra -type f \( -name '*.yaml' -o -name '*.yml' -o -name '*.json' \) -print -quit | grep -q .; then
-            echo "No infrastructure manifests found under manifests/infra; skipping apply."
-            exit 0
-          fi
-
-          nix develop .#default --command ./scripts/apply-calico.sh
-          nix develop .#default --command kubectl apply --recursive -f manifests/infra
+      - name: Run Talos update
+        run: nix develop .#default --command bash ./scripts/run-talos-update.sh
 
       - name: Clean up secrets
         if: always()

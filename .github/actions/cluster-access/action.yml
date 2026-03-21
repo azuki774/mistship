@@ -102,48 +102,13 @@ runs:
           echo "control-plane-ip=$CONTROL_PLANE_IP"
         } >> "$GITHUB_OUTPUT"
 
-    - name: Generate Talos artifacts
+    - name: Generate Talos client artifacts
       shell: bash
+      env:
+        GENERATE_KUBECONFIG: ${{ inputs.generate-kubeconfig }}
       run: |
         set -euo pipefail
-        nix develop .#default --command bash -lc '
-          set -euo pipefail
-          worker_patch_args=()
-          worker_patch_contents="$(grep -vE "^[[:space:]]*(#|$)" patches/worker.yaml | tr -d "[:space:]" || true)"
-          if [[ -n "$worker_patch_contents" && "$worker_patch_contents" != "{}" ]]; then
-            worker_patch_args+=(--config-patch-worker "@patches/worker.yaml")
-          fi
-
-          talosctl gen config "$CLUSTER_NAME" "https://$CONTROL_PLANE_IP:6443" \
-            --with-secrets "$CLUSTER_SECRETS" \
-            --install-disk "$INSTALL_DISK" \
-            --install-image "$INSTALL_IMAGE" \
-            --config-patch "@patches/common.yaml" \
-            --config-patch-control-plane "@patches/controlplane.yaml" \
-            "${worker_patch_args[@]}" \
-            --output "$GENERATED_CONFIG_DIR"
-
-          cp "$GENERATED_CONFIG_DIR/controlplane.yaml" "$CONTROL_PLANE_CONFIG"
-          cp "$GENERATED_CONFIG_DIR/worker.yaml" "$WORKER_CONFIG"
-          cp "$GENERATED_CONFIG_DIR/talosconfig" "$TALOSCONFIG"
-          chmod 600 "$CONTROL_PLANE_CONFIG" "$WORKER_CONFIG" "$TALOSCONFIG"
-        '
-
-    - name: Generate kubeconfig
-      if: ${{ inputs.generate-kubeconfig == 'true' }}
-      shell: bash
-      run: |
-        set -euo pipefail
-        nix develop .#default --command bash -lc '
-          set -euo pipefail
-          talosctl kubeconfig "$KUBECONFIG" \
-            --merge=false \
-            --force \
-            --talosconfig "$TALOSCONFIG" \
-            --endpoints "$CONTROL_PLANE_IP" \
-            --nodes "$CONTROL_PLANE_IP"
-          chmod 600 "$KUBECONFIG"
-        '
+        nix develop .#default --command bash ./scripts/prepare-cluster-access.sh
 
     - name: Publish outputs
       id: publish
