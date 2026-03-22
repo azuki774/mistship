@@ -1,14 +1,7 @@
 name: Cluster Access
-description: Prepare Talos client artifacts and optionally fetch kubeconfig for CI jobs.
+description: Decrypt cluster inputs and prepare Talos client artifacts for CI jobs.
 
 inputs:
-  secret-bucket-name:
-    description: S3 bucket name that stores cluster input files.
-    required: true
-  aws-region:
-    description: AWS region for the secret bucket.
-    required: false
-    default: ap-northeast-1
   generate-kubeconfig:
     description: Whether to fetch kubeconfig after preparing Talos access.
     required: false
@@ -37,17 +30,17 @@ runs:
         set -euo pipefail
         mkdir -p .secret/generated .secret/nodes
 
-    - name: Download cluster inputs
+    - name: Verify SOPS age key
       shell: bash
-      env:
-        SECRET_BUCKET_NAME: ${{ inputs.secret-bucket-name }}
-        AWS_REGION: ${{ inputs.aws-region }}
       run: |
         set -euo pipefail
-        set +x
-        aws s3 cp --only-show-errors "s3://$SECRET_BUCKET_NAME/mistship/.env" .secret/.env --region "$AWS_REGION"
-        aws s3 cp --only-show-errors "s3://$SECRET_BUCKET_NAME/mistship/cluster-secrets.yaml" .secret/cluster-secrets.yaml --region "$AWS_REGION"
-        chmod 600 .secret/.env .secret/cluster-secrets.yaml
+        test -n "${SOPS_AGE_KEY:-}"
+
+    - name: Decrypt cluster inputs
+      shell: bash
+      run: |
+        set -euo pipefail
+        nix develop .#default --command bash ./scripts/decrypt-cluster-secrets.sh
 
     - name: Load cluster settings
       id: settings
@@ -60,7 +53,7 @@ runs:
           local key="$1"
           local value
 
-          value="$(grep -m1 "^${key}=" .secret/.env | cut -d= -f2- || true)"
+          value="$(grep -m1 "^${key}=" .secret/cluster-inputs.env | cut -d= -f2- || true)"
           if [[ -z "$value" ]]; then
             return 1
           fi
