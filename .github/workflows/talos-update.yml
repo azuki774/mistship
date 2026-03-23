@@ -9,6 +9,8 @@ on:
       - "patches/common.yaml"
       - "patches/controlplane.yaml"
       - "image.yml"
+      - ".sops.yaml"
+      - "secrets/**"
       - "manifests/infra/**"
       - "flake.nix"
       - "flake.lock"
@@ -23,7 +25,6 @@ concurrency:
 permissions:
   contents: read
   deployments: write
-  id-token: write
 
 jobs:
   update-control-plane:
@@ -42,14 +43,6 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.SECERT_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.SECRET_BUCKET_ACEESS_KEY }}
-          aws-region: ap-northeast-1
-          mask-aws-account-id: true
-
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v21
 
@@ -57,10 +50,10 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@v13
 
       - name: Prepare cluster access
+        # Real secret decryption is allowed only in this trusted workflow.
         uses: ./.github/actions/cluster-access
-        with:
-          secret-bucket-name: ${{ secrets.SECRET_BUCKET_NAME }}
-          aws-region: ap-northeast-1
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
 
       - name: Run Talos update
         run: nix develop .#default --command bash ./scripts/run-talos-update.sh
